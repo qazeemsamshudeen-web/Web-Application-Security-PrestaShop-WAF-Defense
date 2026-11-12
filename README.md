@@ -1,36 +1,34 @@
 # 🛡️ Enterprise Web Application Security & ModSecurity WAF Defense
-### Day 3 Technical Internship Deliverable: E-Commerce Hardening, Burp Suite Exploitation, and Perimeter WAF Engineering
+### Technical Internship Deliverable: E-Commerce Hardening, Vulnerability Assessment, and Perimeter WAF Engineering
 
 <p align="center">
   <img src="https://img.shields.io/badge/Target-PrestaShop_1.7.8.9-blue.svg?style=for-the-badge&logo=prestashop" />
   <img src="https://img.shields.io/badge/Gateway-Apache_2.4_ModSecurity-red.svg?style=for-the-badge&logo=apache" />
   <img src="https://img.shields.io/badge/Ruleset-OWASP_CRS_v3.3.8_(823_Rules)-orange.svg?style=for-the-badge&logo=owasp" />
-  <img src="https://img.shields.io/badge/Testing-Burp_Suite_Community-gold.svg?style=for-the-badge&logo=burpsuite" />
   <img src="https://img.shields.io/badge/Platform-Docker_&_Ubuntu_22.04-239120.svg?style=for-the-badge&logo=docker" />
+  <img src="https://img.shields.io/badge/Status-Completed_&_Audited-success.svg?style=for-the-badge" />
 </p>
 
 ---
 
 ## 📌 Project Overview & Metadata
 
-* **Author / Intern:** Qazeem Samsudeen Temitope ([@qazeemsamshudeen-web](https://github.com/qazeemsamshudeen-web) | *BlaqqSec*)
-* **Specialization:** Security Operations Center (SOC) & Application Security
-* **Target Application:** PrestaShop E-Commerce v1.7.8.9 (Containerized)
+* **Author / Lead Analyst:** Qazeem Samsudeen Temitope ([@qazeemsamshudeen-web](https://github.com/qazeemsamshudeen-web) | *BlaqqSec*)
+* **Specialization:** Security Operations Center (SOC), Application Security & Threat Defense
+* **Target Application:** PrestaShop E-Commerce v1.7.8.9 (Containerized) & DVWA (vulnerable baseline)
 * **Target Host IP:** `10.0.0.5` (Ubuntu Server 22.04 LTS)
 * **Attacker Host IP:** `10.0.0.3` (Kali Linux 2026.2 VM)
-* **Testing Tool:** Burp Suite Community Edition v2026.3.2
+* **Network Topology:** VirtualBox Isolated Host-Only Subnet (`10.0.0.0/24`)
 
 In modern enterprise architectures, e-commerce applications are prime targets for automated scanners and threat actors seeking credentials, customer databases, and payment tokens. Relying solely on internal application code for input sanitization violates the core security principle of **Defense-in-Depth**.
 
-This project documents a comprehensive security assessment and multi-layered defense implementation on a live PrestaShop environment. We demonstrate how an unprotected web application processes malicious **Cross-Site Scripting (XSS)** inputs, deploy an **Apache ModSecurity reverse proxy WAF** backed by 823 active **OWASP Core Rule Set (CRS)** rules and custom virtual patches, and prove that attacks are proactively blocked with `HTTP 403 Forbidden` before reaching application code.
+This repository contains the complete documentation, forensic telemetry, custom WAF rules, and operational runbook for a dual-host attack simulation and defensive engineering engagement. We demonstrate how an unshielded application processes malicious inputs, deploy an **Apache ModSecurity reverse proxy WAF** backed by 823 active **OWASP Core Rule Set (CRS v3.3.8)** rules and custom virtual patches, and prove that attacks are proactively blocked with `HTTP 403 Forbidden` before reaching application code.
 
 ---
 
 ## 🏗️ Architectural Topology
 
-The lab isolates the attacker node from the target infrastructure across a private host-only subnet:
-
-```
+```text
 +-------------------------------------------------------------------------------+
 |                             LAB ENVIRONMENT TOPOLOGY                          |
 +-------------------------------------------------------------------------------+
@@ -39,8 +37,8 @@ The lab isolates the attacker node from the target infrastructure across a priva
        Kali Linux VM                                      Ubuntu Server VM
        IP: 10.0.0.3                                         IP: 10.0.0.5
   +--------------------+                             +------------------------+
-  |  Burp Suite Pro/CE |                             | Apache 2 Web Server    |
-  |  (Intercept Proxy) |                             | Port 80 (WAF Gateway)  |
+  |  Security Auditing |                             | Apache 2 Web Server    |
+  |  Browser / CLI     |                             | Port 80 (WAF Gateway)  |
   +---------+----------+                             +-----------+------------+
             |                                                    |
             | 1. Attack Request (Direct Port 8080)               | ModSecurity Engine
@@ -68,10 +66,13 @@ The lab isolates the attacker node from the target infrastructure across a priva
 ## 📂 Repository Contents
 
 ```text
+├── PROJECT_RUNBOOK.pdf             # Publication-grade step-by-step operational runbook (PDF)
+├── PROJECT_RUNBOOK.html            # Pre-styled runbook source document
 ├── LAB_REPORT.md                   # Full comprehensive technical lab report
-├── LAB_REPORT.html                 # Pre-styled visual report ready for Google Docs copy-paste
+├── LAB_REPORT.html                 # Formatted rich-text report ready for Google Docs import
 ├── prestashop_custom_rules.conf    # Custom ModSecurity ruleset (Rules 1000001 - 1000004)
-├── screenshots/                    # Complete visual evidence & forensic captures
+├── push_to_github.bat              # Automation script to stage, commit, and push to remote
+├── screenshots/                    # Complete empirical evidence & forensic captures
 │   ├── 00_burp_baseline_and_waf_traffic.jpg   # Burp history showing 200 OK vs 403 Forbidden
 │   ├── 01_customer_vs_admin_login.png         # Account separation audit
 │   ├── 02_prestashop_admin_rename_prompt.png  # PrestaShop mandatory directory rename guard
@@ -79,117 +80,92 @@ The lab isolates the attacker node from the target infrastructure across a priva
 │   ├── 04_burp_ssl_handshake_error.png        # SSL handshake failure on origin container
 │   ├── 05_annotated_modsec_evidence.png       # Annotated forensic error log analysis
 │   ├── 05_prestashop_system_info_disclosure.jpg# System information leakage audit
-│   └── 06_owasp_crs_823_rules.jpg             # Terminal verification of 823 OWASP CRS rules
+│   ├── 06_owasp_crs_823_rules.jpg             # Terminal verification of 823 OWASP CRS rules
+│   ├── 07_prestashop_xss_search_baseline.jpg  # Baseline search with script injection (200 OK)
+│   ├── 08_apache_admin_ip_restricted_403.png  # Negative testing: 403 Forbidden on admin path
+│   ├── 09_prestashop_outdated_modules.jpg     # Audit of 32 outdated modules needing patches
+│   ├── 10_robots_txt_directory_leak.jpg       # Information disclosure leaking 101 directories
+│   ├── 11_config_dir_403_forbidden.png        # Directory listing disabled verification (403)
+│   ├── 12_nikto_scan_headers.jpg              # Nikto automated scan highlighting missing headers
+│   ├── 13_cookie_security_httponly.jpg        # F12 Storage Inspector: HttpOnly & SameSite flags
+│   ├── 14_prestashop_db_backup.jpg            # PrestaShop compressed .sql.gz database backups
+│   ├── 15_wafw00f_detection_verification.png  # Automated WAF fingerprinting via wafw00f
+│   └── annotated_modsec_evidence.png          # High-contrast color-coded forensic log breakdown
 └── README.md                       # Repository documentation and architecture guide
 ```
 
 ---
 
-## 🎯 Key Deliverables & Security Findings
+## 🎯 Core Deliverables Summary
 
-### 1. Attack vs. Defense Verification (Burp Suite)
-* **Unprotected Origin (Port 8080):** When injecting `<script>alert('XSS-PRESTASHOP-POC')</script>` into the catalog search parameter `s`, the direct Docker origin processed the request without filtering, returning **`HTTP/1.1 200 OK`**.
-* **Protected Gateway (Port 80):** When routing the exact same request through Apache ModSecurity, the WAF inspected the parameters in Phase 2, classified the script tags as a critical hazard, and immediately dropped the connection with **`HTTP/1.1 403 Forbidden`**.
+### Deliverable 1: DVWA Exploitation & Defense
+* **SQL Injection (SQLi):** Exploited `' OR '1'='1` on Port 8080 (`HTTP 200 OK`, full database user dump). Re-tested through Port 80 WAF proxy $\rightarrow$ dropped with **`HTTP 403 Forbidden`**.
+* **Cross-Site Scripting (XSS):** Executed `<script>alert('XSS-DVWA-POC')</script>` on Port 8080 (`HTTP 200 OK`, alert box rendered). Re-tested through Port 80 WAF proxy $\rightarrow$ dropped with **`HTTP 403 Forbidden`**.
 
-### 2. Forensic Audit Log & Anomaly Score
-Inspecting `/var/log/apache2/error.log` verified that both our custom rule and the OWASP Core Rule Set triggered:
-```text
-[Mon Nov 09 14:15:22 2026] [:error] [pid 14220] [client 10.0.0.3:49812] 
-ModSecurity: Access denied with code 403 (phase 2). 
-Pattern match "(?i)(<script[^>]*>.*?</script>|<script|javascript:|onload=|onerror=|alert\\\\(|<svg[^>]*onload)" at ARGS:s. 
-[file "/etc/modsecurity/prestashop_custom_rules.conf"] [line 11] [id "1000001"] 
-[msg "[DEFENSE BLOCKED] Cross-Site Scripting (XSS) Attack Detected"] [severity "CRITICAL"] 
-[hostname "10.0.0.5"] [uri "/"] [unique_id "Z9_abcdef12345"]
-```
-* **Client IP:** `10.0.0.3` (Kali Linux workstation)
-* **Custom Rule ID:** `1000001` (PrestaShop XSS Guard)
-* **OWASP CRS Rules Matched:** Rule `941100` (Script Tag Vector) + Rule `949110` (Inbound Anomaly Score Exceeded)
-* **Total Anomaly Score:** **18** (Blocking threshold is 5)
+### Deliverable 2: Custom ModSecurity Ruleset (`prestashop_custom_rules.conf`)
+* **Rule 1000001:** Reflected & Stored XSS Prevention (inspects `ARGS`, `REQUEST_COOKIES`, `REQUEST_HEADERS`).
+* **Rule 1000002:** SQL Injection Prevention (`UNION SELECT`, `' OR 1=1`, comment truncation).
+* **Rule 1000003:** Directory Traversal & Critical File Protection (`../../`, `/etc/passwd`, `settings.inc.php`, `.env`).
+* **Rule 1000004:** Hardened Path Obfuscation & Installer Directory Restriction (`/install`).
 
----
+### Deliverable 3: Defense Validation & Anomaly Scoring
+* **Automated Verification:** `wafw00f http://10.0.0.5/` confirmed site is behind an active WAF (`Normal: 200, XSS: 403`).
+* **Anomaly Scoring Model:** ModSecurity operates under collaborative scoring (`REQUEST-949-BLOCKING-EVALUATION.conf`). When cumulative attack scores exceed **5**, the engine issues a disruptive `403 Forbidden` block in Phase 2.
 
-## 🛡️ Custom WAF Rule Engineering (`prestashop_custom_rules.conf`)
+### Deliverable 4: PrestaShop 10-Point Security Checklist Audit
+1. **Application & Module Updates:** Audited 32 outdated modules; deployed virtual patching; scheduled PrestaShop 8.x upgrade.
+2. **Default/Demo Accounts & Data:** Toggled Demo Mode OFF on dashboard; audited customer accounts list.
+3. **Admin Password & MFA:** Enforced 16-character complex passphrase; recommended TOTP 2FA module.
+4. **Permissions & Directory Listing:** Confirmed `//config/` returns 403 Forbidden; deleted `/var/www/html/install`.
+5. **Session Cookies & Headers:** Storage Inspector confirmed `HttpOnly: true` and `SameSite: Lax` on session cookies.
+6. **Disable Unnecessary Modules:** Disabled unneeded onboarding and marketing plugins to achieve Attack Surface Reduction.
+7. **API & Payment Endpoints:** Verified Webservice API is set to `NO`; no live payment merchant keys configured.
+8. **TLS/SSL Enforcement:** Identified container handshake failure; documented reverse proxy Port 443 TLS termination requirement.
+9. **Admin Path Obfuscation & Negative Testing:** Core `/admin` path returns 404; active on secret `/admin47140aj33/`. Apache `<Location>` block tested with `Require ip 10.0.0.99` (**Negative Testing**), successfully blocking test machine `10.0.0.3` with **`HTTP 403 Forbidden`**.
+10. **Backup & Recovery Verification:** Successfully generated two compressed `.sql.gz` database backup archives.
 
-Our custom ruleset provides targeted virtual patching against common e-commerce attack vectors:
-
-| Rule ID | Vector | Monitored Signatures | Protection Objective |
-| :---: | :--- | :--- | :--- |
-| **`1000001`** | **XSS** | `<script>`, `alert()`, `onerror=`, `javascript:`, `<svg onload` | Stops script injection in search bars, cookies, and customer forms. |
-| **`1000002`** | **SQLi** | `UNION SELECT`, `' OR 1=1`, `--`, `DROP TABLE`, `insert into` | Prevents database manipulation and customer account exfiltration. |
-| **`1000003`** | **Path Traversal** | `../../`, `etc/passwd`, `settings.inc.php`, `.env`, `.git` | Blocks unauthorized crawling into confidential configuration files. |
-| **`1000004`** | **Installer Guard**| `^/install/` | Prohibits access to residual setup scripts to prevent site reinstallation. |
-
----
-
-## 🧪 Security Validation Matrix
-
-| Test ID | Vulnerability Category | Injected Payload | Port 8080 (No WAF) | Port 80 (With WAF) | Status |
-| :---: | :--- | :--- | :---: | :---: | :---: |
-| **TC-01** | Cross-Site Scripting (XSS) | `/?s=<script>alert('POC')</script>` | `200 OK` | `403 Forbidden` | ✅ **PASSED** |
-| **TC-02** | SQL Injection (SQLi) | `/?id=1' UNION SELECT 1,2,3--` | `200 OK` | `403 Forbidden` | ✅ **PASSED** |
-| **TC-03** | Sensitive Path Traversal | `/?file=../../etc/passwd` | `200 OK` | `403 Forbidden` | ✅ **PASSED** |
-| **TC-04** | Installer Exploitation | `/install/index.php` | `200 OK` | `403 Forbidden` | ✅ **PASSED** |
+### Deliverable 5: PrestaShop Attack Simulation & Forensic Telemetry
+* **Baseline (Port 8080):** Injected `<script>alert('XSS-PRESTASHOP')</script>` into catalog search parameter `s`. PrestaShop accepted the input and responded with `HTTP 200 OK` (*"No matches found"*).
+* **Protected (Port 80):** Injected identical payload through the WAF. ModSecurity dropped the connection with `HTTP 403 Forbidden`.
+* **Forensic Analysis (`/var/log/apache2/error.log`):**
+  * **Attacker Attribution:** `[client 10.0.0.3:58494]` directly identifies Kali Linux.
+  * **Rule Matching:** Libinjection and CRS Rule `941110` matched `<script>` in `ARGS:s`.
+  * **Action:** `Access denied with code 403 (phase 2)`.
+  * **Anomaly Score:** Inbound Anomaly Score reached **18** (limit: 5).
 
 ---
 
-## 🔍 Application Hardening & Configuration Audit
+## 🔒 Production Architecture & Hardening Blueprint
 
-| Security Control | Required Standard | Lab Status | Remediation Enforced | Result |
-| :--- | :--- | :--- | :--- | :---: |
-| **Installer Removal** | Delete `/install` folder | Present post-setup | `rm -rf /var/www/html/install` | ✅ PASSED |
-| **Admin Obfuscation** | Rename `/admin` directory | Enforced by PrestaShop | Renamed to `/admin632wbv39e/` | ✅ PASSED |
-| **Debug Mode** | Disabled in production | Advanced Parameters check | Confirmed Debug mode is OFF | ✅ PASSED |
-| **File Permissions** | Folders 755 / Files 644 | Container internal check | Root container least-privilege mode | ✅ PASSED |
-| **Information Disclosure** | Hide tech stack versions | `/system-information` check | Requires `ServerTokens Prod` in Apache | ⚠️ AUDITED |
-| **SSL / TLS Encryption** | Mandatory HTTPS | Port 8080 lacks cert | Must terminate TLS at reverse proxy (Port 443) | ⚠️ ACTION REQ. |
-
----
-
-## 🚀 Step-by-Step Reproduction Guide
-
-### 1. Start Docker Containers (Ubuntu `10.0.0.5`)
-```bash
-# MySQL 5.7 Database
-sudo docker run -d --name prestashop-mysql \
-  -e MYSQL_ROOT_PASSWORD=adminprestashop \
-  -e MYSQL_DATABASE=prestashop \
-  -e MYSQL_USER=prestashop \
-  -e MYSQL_PASSWORD=prestashop \
-  -p 3306:3306 mysql:5.7
-
-# PrestaShop 1.7.8.9 Core
-sudo docker run -d --name prestashop-site \
-  -p 8080:80 --link prestashop-mysql:mysql \
-  -e DB_SERVER=mysql -e DB_USER=prestashop \
-  -e DB_PASSWD=prestashop -e DB_NAME=prestashop \
-  prestashop/prestashop:1.7.8.9
-```
-
-### 2. Hardening Enforcements
-```bash
-# Remove installer and rename admin folder
-sudo docker exec -it prestashop-site rm -rf /var/www/html/install
-sudo docker exec -it prestashop-site mv /var/www/html/admin /var/www/html/admin632wbv39e
-```
-
-### 3. Deploy ModSecurity Reverse Proxy
-```bash
-sudo apt update && sudo apt install -y apache2 libapache2-mod-security2 modsecurity-crs
-sudo cp /etc/modsecurity/modsecurity.conf-recommended /etc/modsecurity/modsecurity.conf
-sudo sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' /etc/modsecurity/modsecurity.conf
-sudo a2enmod proxy proxy_http headers security2
-```
-
-Configure `/etc/apache2/sites-available/000-default.conf` and restart:
-```bash
-sudo systemctl restart apache2
-```
+In enterprise production deployments, **Port 8080 is completely invisible to the outside world**:
+1. **Loopback Binding:** The container is bound strictly to `127.0.0.1:8080`, preventing outside interfaces from reaching it.
+2. **Host Firewall Enforcement:**
+   ```bash
+   sudo ufw default deny incoming
+   sudo ufw default allow outgoing
+   sudo ufw allow 80/tcp
+   sudo ufw allow 443/tcp
+   sudo ufw deny 8080
+   sudo ufw enable
+   ```
+3. **Privileged Access:** Authorized engineers access origin containers via encrypted SSH tunnels:
+   ```bash
+   ssh -L 8080:127.0.0.1:8080 blaqqsec03@10.0.0.5
+   ```
 
 ---
 
-## 👨‍💻 Author
+## 🚀 How to Clone and Push to GitHub
 
-* **Engineer:** Qazeem Samsudeen Temitope
-* **Security Handle:** BlaqqSec
-* **GitHub:** [@qazeemsamshudeen-web](https://github.com/qazeemsamshudeen-web)
-* **Role:** Cybersecurity & SOC Analyst Intern
+To push this entire project to your personal GitHub account:
+1. Create a new empty repository on [GitHub](https://github.com/new) named:
+   ```text
+   Web-Application-Security-PrestaShop-WAF-Defense
+   ```
+2. Double-click **`push_to_github.bat`** inside this project directory (or run it from the command line). It will automatically stage all files, commit the changes, link your remote URL, and push to branch `main`.
+
+---
+
+<p align="center">
+  <b>&copy; 2026 Qazeem Samsudeen Temitope (BlaqqSec). Certified Cyber Security Internship Portfolio.</b>
+</p>
